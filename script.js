@@ -25,7 +25,7 @@ fetch("catalog.json")
     alert("❌ Failed to load VM list.");
   });
 
-// ✅ Trigger deployment function
+// ✅ Trigger deployment function calling your backend proxy
 function triggerDeployment() {
   const vmType = selectedAssets.Infrastructure;
 
@@ -34,37 +34,29 @@ function triggerDeployment() {
     return;
   }
 
-  const token = "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"; // Replace securely
-  const owner = "rachanarao1";
-  const repo = "golden";
-  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/deploy.yml/dispatches`;
+  // Replace this URL with your actual backend API endpoint URL
+  const proxyUrl = "https://your-backend-domain/api/trigger-deploy";
 
-  fetch(url, {
+  fetch(proxyUrl, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/vnd.github+json",
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      ref: "main",
-      inputs: {
-        vm_type: vmType
-      }
-    })
+    body: JSON.stringify({ vm_type: vmType })
   })
-    .then(response => {
-      if (response.status === 204) {
-        alert(`✅ Deployment triggered for: ${vmType}`);
+    .then(response => response.json())
+    .then(data => {
+      if (data.message) {
+        alert(`✅ ${data.message}`);
+      } else if (data.error) {
+        alert(`❌ ${data.error}`);
       } else {
-        return response.json().then(data => {
-          console.error("❌ GitHub API error:", data);
-          alert("❌ Deployment failed. See console for details.");
-        });
+        alert("❌ Deployment failed, see console for details.");
+        console.error(data);
       }
     })
     .catch(err => {
       console.error("❌ Network error:", err);
-      alert("❌ Could not reach GitHub API.");
+      alert("❌ Could not reach deployment service.");
     });
 }
