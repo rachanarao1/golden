@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ec2",
+    "name": "EC2 Instance",
+    "description": "Deploys an AWS EC2 Virtual Machine.",
+    "category": "Infrastructure",
+    "terraform_module": "terraform-aws-modules/ec2-instance/aws"
+  },
+  {
+    "id": "azure_vm",
+    "name": "Azure VM",
+    "description": "Deploys an Azure Virtual Machine.",
+    "category": "Infrastructure",
+    "terraform_module": "terraform-azurerm-modules/vm/azure"
+  }
+]
