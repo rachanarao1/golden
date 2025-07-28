@@ -1,58 +1,70 @@
 let selectedAssets = {
   Infrastructure: null
-  // Application: null,
-  // Monitoring: null
 };
 
-window.onload = function () {
-  fetch('assets/catalog.json')
-    .then(response => response.json())
-    .then(data => renderDropdowns(data))
-    .catch(error => console.error('Error loading catalog:', error));
-};
+// ✅ Load catalog.json and populate dropdown
+fetch("catalog.json")
+  .then(response => response.json())
+  .then(data => {
+    const infraSelect = document.getElementById("infrastructure-select");
+    data.forEach(item => {
+      if (item.category === "Infrastructure") {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.text = item.name;
+        infraSelect.appendChild(option);
+      }
+    });
 
-function renderDropdowns(assets) {
-  const infraSelect = document.getElementById('infrastructure-select');
-  // const appSelect = document.getElementById('application-select');
-  // const monitorSelect = document.getElementById('monitoring-select');
-
-  infraSelect.length = 1;
-  // appSelect.length = 1;
-  // monitorSelect.length = 1;
-
-  assets.forEach(asset => {
-    const option = document.createElement('option');
-    option.value = asset.id;
-    option.textContent = asset.name;
-
-    if (asset.category === "Infrastructure") infraSelect.appendChild(option);
-    // if (asset.category === "Application") appSelect.appendChild(option);
-    // if (asset.category === "Monitoring") monitorSelect.appendChild(option);
+    infraSelect.addEventListener("change", (e) => {
+      selectedAssets.Infrastructure = e.target.value;
+    });
+  })
+  .catch(err => {
+    console.error("Failed to load catalog.json:", err);
+    alert("❌ Failed to load VM list.");
   });
 
-  infraSelect.onchange = () => selectedAssets.Infrastructure = infraSelect.value;
-  // appSelect.onchange = () => selectedAssets.Application = appSelect.value;
-  // monitorSelect.onchange = () => selectedAssets.Monitoring = monitorSelect.value;
-}
-
+// ✅ Trigger deployment function
 function triggerDeployment() {
-  const selected = Object.values(selectedAssets).filter(Boolean);
+  const vmType = selectedAssets.Infrastructure;
 
-  if (selected.length < 1) {
-    alert("Please select a Virtual Machine before deploying.");
+  if (!vmType) {
+    alert("⚠️ Please select a Virtual Machine before deploying.");
     return;
   }
 
-  // Simulate REST API trigger
-  alert("Selected Modules:\n" + JSON.stringify(selectedAssets, null, 2));
+  const token = "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"; // Replace securely
+  const owner = "Purvash-143";
+  const repo = "platform";
+  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/deploy.yml/dispatches`;
 
-  // Example: call REST API endpoint
-  // fetch('https://api.example.com/deploy', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(selectedAssets)
-  // })
-  // .then(res => res.json())
-  // .then(data => alert("Deployment started: " + JSON.stringify(data)))
-  // .catch(err => console.error("Deployment error:", err));
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      ref: "main",
+      inputs: {
+        vm_type: vmType
+      }
+    })
+  })
+    .then(response => {
+      if (response.status === 204) {
+        alert(`✅ Deployment triggered for: ${vmType}`);
+      } else {
+        return response.json().then(data => {
+          console.error("❌ GitHub API error:", data);
+          alert("❌ Deployment failed. See console for details.");
+        });
+      }
+    })
+    .catch(err => {
+      console.error("❌ Network error:", err);
+      alert("❌ Could not reach GitHub API.");
+    });
 }
