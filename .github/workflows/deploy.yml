@@ -1,0 +1,48 @@
+name: Deploy VM
+
+on:
+  workflow_dispatch:
+    inputs:
+      vm_type:
+        description: 'Choose VM type'
+        required: true
+        default: 'ec2'
+        type: choice
+        options:
+          - ec2
+          - azure_vm
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Select module
+        run: |
+          mkdir terraform
+          if [[ "${{ github.event.inputs.vm_type }}" == "ec2" ]]; then
+            cp -r modules/ec2/* terraform/
+          elif [[ "${{ github.event.inputs.vm_type }}" == "azure_vm" ]]; then
+            cp -r modules/azure_vm/* terraform/
+          fi
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
