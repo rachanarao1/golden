@@ -34,8 +34,11 @@ function triggerDeployment() {
     return;
   }
 
-  // Replace this URL with your actual backend API endpoint URL
-  const proxyUrl = "https://your-backend-domain/api/trigger-deploy";
+  // 🔧 Use local backend for development
+  const proxyUrl = "http://localhost:3000/api/trigger-deploy";
+
+  // 🌐 When deployed, change to:
+  // const proxyUrl = "https://your-deployed-backend.onrender.com/api/trigger-deploy";
 
   fetch(proxyUrl, {
     method: "POST",
@@ -44,15 +47,20 @@ function triggerDeployment() {
     },
     body: JSON.stringify({ vm_type: vmType })
   })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.message) {
         alert(`✅ ${data.message}`);
       } else if (data.error) {
         alert(`❌ ${data.error}`);
       } else {
-        alert("❌ Deployment failed, see console for details.");
-        console.error(data);
+        alert("❌ Unknown error during deployment.");
+        console.error("Unexpected response:", data);
       }
     })
     .catch(err => {
